@@ -1,3 +1,5 @@
+var NUM_RULES = 20000;
+
 function getAverageAfterRemovingOutliers(arr) {
   const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
   let avg = average(arr);
@@ -5,8 +7,8 @@ function getAverageAfterRemovingOutliers(arr) {
     arr.map((v) => Math.pow(v - avg, 2)).reduce((p, c) => p + c, 0) /
       (arr.length - 1)
   );
-  let max_limit = avg + 2 * std;
-  let min_limit = avg - 2 * std;
+  let max_limit = avg + 3 * std;
+  let min_limit = avg - 3 * std;
   return average(arr.filter((v) => v <= max_limit && v >= min_limit));
 }
 
@@ -18,11 +20,12 @@ function checkDisableStaticRulesPerformanceAndTestAgainAfterEnableAllRules(resol
       enableRuleIds: []
     };
 
-    if (disabled_rules_count <= 0) {
-      console.error('disabled_rules_count must be greater than 0 ');
-      return;
-    }
-    option.disableRuleIds = Array.from({length: disabled_rules_count}, (_, i) => i + 10001);
+  if (disabled_rules_count < 0) {
+    console.error('disabled_rules_count must not be less than 0 ');
+    return;
+  } else {
+    option.disableRuleIds = Array.from({ length: disabled_rules_count }, (_, i) => i + 10001);
+  }
 
     var start = performance.now();
     chrome.declarativeNetRequest.updateStaticRules(
@@ -51,7 +54,7 @@ function startTest(resolve) {
   if (test_context.index >= test_context.disabled_rules_count_list.length) {
     console.error('Test finished');
     for (const [i, perfs] of Object.entries(test_context.results)) {
-      console.error(test_context.disabled_rules_count_list[i] + ": " +
+      console.error("Result for " + test_context.disabled_rules_count_list[i] + " : " +
                     getAverageAfterRemovingOutliers(perfs));
     }
     //for (const [i, perfs] of Object.entries(test_context.results)) {
@@ -71,7 +74,8 @@ function startTest(resolve) {
 var test_context = {
   index: 0,
   iteration: 0,
-  disabled_rules_count_list: [10000, 20000, 30000, 40000, 50000, 60000],
+  disabled_rules_count_list:
+    Array.from({ length: Math.floor(NUM_RULES / 1000 + 1) }, (_, i) => i * 1000),
   results: {},
 };
 
